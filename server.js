@@ -33,8 +33,18 @@ wss.on('connection', (ws, req) => {
             return
         }
 
-        // verifiera jwt en gång
-        const payload = jwt.verify(token, JWT_SECRET)
+        // om token expired, (4003) så klienten kan refresh + reconnect
+        let payload
+        try {
+            payload = jwt.verify(token, JWT_SECRET)// verifiera jwt en gång
+        } catch (err) {
+            if (err.name === "TokenExpiredError") {
+                ws.close(4003, "Token expired") // del3
+                return
+            }
+            throw err // andra fel
+        }
+
         const userId = payload.sub
 
         console.log("User connected:", userId)
